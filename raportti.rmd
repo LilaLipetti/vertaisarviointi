@@ -1,0 +1,87 @@
+---
+title: "Vertaisarviointi"
+author: "PH"
+date: "February 11, 2017"
+output: html_document
+---
+
+```{r setup, echo=FALSE, include=FALSE}
+library(data.table)
+library(readr)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Tämä on R markdown dokkari, se sisältää R ajettavaa koodia. <http://rmarkdown.rstudio.com>.
+rmd dokkariin voi sisällyttää myös python, sql, jne.
+
+Eli kun tämä dokumentti ajetaan R Studiolla komennolla "Knit" , niin se ajaa koodiblokkeihin sisällytetyt koodit.
+Kätevää ja tuottaa valmiin dokumentin (esim. html).
+
+
+## Ongelma: vertaisarviointi
+
+
+Oletetaan että osallistujalista on tiedostossa osallistujat.csv, luetaan se data.table muotoon
+```{r,cache=TRUE,echo=TRUE}
+osallistujat <- read_csv("osallistujat.csv")
+nimet <- as.data.table(osallistujat)
+show(nimet)
+```
+
+R sisältää kätevän `sample` funktion, jolla voidaan tuottaa satunnaislukuja.
+Jos oletetaan että n osallistujaa niin tällä funktiolla voidaan tuotaa luvut 1..n satunnaiseen järjestykseen.
+
+Käytetään myös hyväksi `nrow` funktiota, joka palauttaa taulukon rivien määrän.
+
+```{r,cache=TRUE}
+jarjestys <- sample (1:nrow(nimet),nrow(nimet),replace=F)
+
+```
+
+```{r,echo=TRUE}
+show(jarjestys)
+```
+
+Luodaan uusi taulukko ja tätä uutta satunnaisjärjestystä hyväksi käyttäen lajitellaan taulukko, jolloin osallistujien nimet ovat uudessa järjestyksessä sarakkeessa 2.
+
+```{r,cache=TRUE}
+arviointiT <- data.table(jarjestys,nimet)
+arviointiT <- arviointiT[order(jarjestys)]
+
+```
+
+
+Taulukko näyttää nyt tältä
+```{r echo=TRUE}
+show(arviointiT)
+```
+
+
+Kikaillaan taulukoilla käyttäen hyväksi R:n data.tablen:n ominaisuuksia, eli luodaan arvioijasarakkeet
+
+```{r,cache=TRUE}
+arvioijat1 = rbind( arviointiT[2:nrow(nimet),2] , arviointiT[,arviointiT[1:1,2]])
+arvioijat2 = rbind( arviointiT[3:nrow(nimet),2] , arviointiT[,arviointiT[1:2,2]])
+arvioijat3 = rbind( arviointiT[4:nrow(nimet),2] , arviointiT[,arviointiT[1:3,2]])
+```
+
+Lisätään arvioijasarakkeet arviointitaulukkoon eli lisätään alkuperäisen taulukon perään uusi sarake.
+```{r,cache=TRUE}
+arviointiT = arviointiT[, arvioija1:=arvioijat1]
+arviointiT = arviointiT[, arvioija2:=arvioijat2]
+arviointiT = arviointiT[, arvioija3:=arvioijat3]
+```
+
+Ja nyt voidaankin tuottaa lopullinen taulukko.
+```{r echo=TRUE}
+show(arviointiT)
+```
+
+**PS.** Ainut ongelma tässä on R:n näennäisfunktio kun luodaan tuota uutta järjestystä.
+Eli joka kerta kun tämän dokumentin ajaa niin lopputulos on sama.
+
+**Vinkki:** Knit cachettaa datasetit, joten cahce pitää tyhjentää raportin ajojen välillä,
+käyttäen **"Knit"->"Clear Knit Cache"**
